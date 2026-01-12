@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { 
   User, 
   Building2, 
@@ -17,6 +17,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type ApplicantType = "individual" | "business" | "government" | null;
 
@@ -50,15 +53,79 @@ const processSteps = [
 
 export default function Apply() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const initialType = searchParams.get("type") as ApplicantType;
   const [selectedType, setSelectedType] = useState<ApplicantType>(
     initialType || null
   );
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [referenceNumber, setReferenceNumber] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    organization: "",
+    amount: "",
+    purpose: "",
+    timeline: "",
+    repayment: "",
+    collateral: "",
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.id]: e.target.value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormSubmitted(true);
+    
+    if (!user) {
+      toast.error("Please sign in to submit an application");
+      navigate("/auth");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Generate reference number
+      const refNum = "TVC-" + Date.now().toString(36).toUpperCase().slice(-8);
+
+      const { error } = await supabase.from("applications").insert({
+        user_id: user.id,
+        reference_number: refNum,
+        applicant_type: selectedType!,
+        full_name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        organization_name: formData.organization || null,
+        amount_requested: parseFloat(formData.amount),
+        purpose: formData.purpose,
+        timeline: formData.timeline,
+        repayment_source: formData.repayment,
+        collateral: formData.collateral || null,
+      });
+
+      if (error) {
+        console.error("Application error:", error);
+        toast.error("Failed to submit application. Please try again.");
+      } else {
+        setReferenceNumber(refNum);
+        setFormSubmitted(true);
+        toast.success("Application submitted successfully!");
+      }
+    } catch (error) {
+      console.error("Application error:", error);
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -82,6 +149,11 @@ export default function Apply() {
               Start your application by selecting your category below. Our team
               will guide you through the verification and approval process.
             </p>
+            {!user && (
+              <p className="font-sans text-sm text-primary mt-4">
+                Please <a href="/auth" className="underline font-semibold">sign in</a> to submit an application.
+              </p>
+            )}
           </motion.div>
         </div>
       </section>
@@ -193,21 +265,46 @@ export default function Apply() {
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="name">Full Name</Label>
-                          <Input id="name" placeholder="Enter your full name" required />
+                          <Label htmlFor="fullName">Full Name</Label>
+                          <Input 
+                            id="fullName" 
+                            placeholder="Enter your full name" 
+                            value={formData.fullName}
+                            onChange={handleInputChange}
+                            required 
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="email">Email Address</Label>
-                          <Input id="email" type="email" placeholder="your@email.com" required />
+                          <Input 
+                            id="email" 
+                            type="email" 
+                            placeholder="your@email.com" 
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            required 
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="phone">Phone Number</Label>
-                          <Input id="phone" placeholder="+211 XXX XXX XXX" required />
+                          <Input 
+                            id="phone" 
+                            placeholder="+211 XXX XXX XXX" 
+                            value={formData.phone}
+                            onChange={handleInputChange}
+                            required 
+                          />
                         </div>
                         {selectedType !== "individual" && (
                           <div className="space-y-2">
                             <Label htmlFor="organization">Organization Name</Label>
-                            <Input id="organization" placeholder="Organization name" required />
+                            <Input 
+                              id="organization" 
+                              placeholder="Organization name" 
+                              value={formData.organization}
+                              onChange={handleInputChange}
+                              required 
+                            />
                           </div>
                         )}
                       </div>
@@ -221,15 +318,34 @@ export default function Apply() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="amount">Amount Requested (USD)</Label>
-                          <Input id="amount" type="number" placeholder="Enter amount" required />
+                          <Input 
+                            id="amount" 
+                            type="number" 
+                            placeholder="Enter amount" 
+                            value={formData.amount}
+                            onChange={handleInputChange}
+                            required 
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="purpose">Purpose of Funds</Label>
-                          <Input id="purpose" placeholder="e.g., Medical expenses, payroll" required />
+                          <Input 
+                            id="purpose" 
+                            placeholder="e.g., Medical expenses, payroll" 
+                            value={formData.purpose}
+                            onChange={handleInputChange}
+                            required 
+                          />
                         </div>
                         <div className="space-y-2 md:col-span-2">
                           <Label htmlFor="timeline">When do you need the funds?</Label>
-                          <Input id="timeline" placeholder="e.g., Within 48 hours, by end of week" required />
+                          <Input 
+                            id="timeline" 
+                            placeholder="e.g., Within 48 hours, by end of week" 
+                            value={formData.timeline}
+                            onChange={handleInputChange}
+                            required 
+                          />
                         </div>
                       </div>
                     </div>
@@ -249,6 +365,8 @@ export default function Apply() {
                             id="repayment"
                             placeholder="Describe how you will repay this advance..."
                             className="min-h-[100px]"
+                            value={formData.repayment}
+                            onChange={handleInputChange}
                             required
                           />
                         </div>
@@ -258,6 +376,8 @@ export default function Apply() {
                             id="collateral"
                             placeholder="Describe any collateral you can provide..."
                             className="min-h-[80px]"
+                            value={formData.collateral}
+                            onChange={handleInputChange}
                           />
                         </div>
                       </div>
@@ -277,7 +397,7 @@ export default function Apply() {
                           Employment letter, bank statements, contracts, or other relevant documents
                         </p>
                         <input type="file" className="hidden" multiple />
-                        <Button variant="outline" className="mt-4">
+                        <Button variant="outline" className="mt-4" type="button">
                           Select Files
                         </Button>
                       </div>
@@ -292,9 +412,13 @@ export default function Apply() {
                       >
                         Cancel
                       </Button>
-                      <Button variant="hero" size="lg" type="submit">
-                        Submit Application
-                        <ArrowRight className="ml-2 h-4 w-4" />
+                      <Button variant="hero" size="lg" type="submit" disabled={loading || !user}>
+                        {loading ? "Submitting..." : (
+                          <>
+                            Submit Application
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </>
+                        )}
                       </Button>
                     </div>
                   </form>
@@ -320,11 +444,16 @@ export default function Apply() {
                 submission and contact you within 24-72 hours.
               </p>
               <p className="font-sans text-sm text-muted-foreground mb-8">
-                Reference Number: TVC-{Date.now().toString(36).toUpperCase()}
+                Reference Number: <span className="font-bold text-foreground">{referenceNumber}</span>
               </p>
-              <Button variant="hero" asChild>
-                <a href="/">Return to Home</a>
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button variant="hero" asChild>
+                  <a href="/dashboard">View Dashboard</a>
+                </Button>
+                <Button variant="heroOutline" asChild>
+                  <a href="/">Return to Home</a>
+                </Button>
+              </div>
             </motion.div>
           )}
         </div>

@@ -45,7 +45,7 @@ const coreValues = [
 
 const stats = [
   { value: "South Sudan", label: "Headquarters" },
-  { value: "2024", label: "Founded" },
+  { value: "2025", label: "Founded" },
   { value: "Global", label: "Standards" },
   { value: "Multi-sector", label: "Coverage" },
 ];

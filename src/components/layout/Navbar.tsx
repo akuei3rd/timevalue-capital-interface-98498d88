@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 import tvcLogo from "@/assets/tvc-logo.png";
 
 const navLinks = [
@@ -11,12 +12,14 @@ const navLinks = [
   { name: "How It Works", path: "/process" },
   { name: "Why TimeValue", path: "/why-us" },
   { name: "Governance", path: "/governance" },
+  { name: "Contact", path: "/contact" },
 ];
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, isAdmin, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,6 +32,10 @@ export function Navbar() {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location]);
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <header
@@ -71,6 +78,32 @@ export function Navbar() {
         </div>
 
         <div className="hidden lg:flex items-center gap-4">
+          {user ? (
+            <>
+              {isAdmin && (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/admin">
+                    <Shield className="h-4 w-4 mr-2" />
+                    Admin
+                  </Link>
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/dashboard">
+                  <User className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Link>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            </>
+          ) : (
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/auth">Sign In</Link>
+            </Button>
+          )}
           <Button variant="heroOutline" size="lg" asChild>
             <Link to="/apply">Request Capital</Link>
           </Button>
@@ -109,7 +142,33 @@ export function Navbar() {
                   {link.name}
                 </Link>
               ))}
-              <div className="pt-4 border-t border-border">
+              <div className="pt-4 border-t border-border space-y-2">
+                {user ? (
+                  <>
+                    {isAdmin && (
+                      <Button variant="ghost" className="w-full justify-start" asChild>
+                        <Link to="/admin">
+                          <Shield className="h-4 w-4 mr-2" />
+                          Admin Dashboard
+                        </Link>
+                      </Button>
+                    )}
+                    <Button variant="ghost" className="w-full justify-start" asChild>
+                      <Link to="/dashboard">
+                        <User className="h-4 w-4 mr-2" />
+                        My Dashboard
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start" onClick={handleSignOut}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <Button variant="ghost" className="w-full justify-start" asChild>
+                    <Link to="/auth">Sign In</Link>
+                  </Button>
+                )}
                 <Button variant="hero" size="lg" className="w-full" asChild>
                   <Link to="/apply">Request Capital</Link>
                 </Button>

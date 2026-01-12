@@ -14,16 +14,150 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      applications: {
+        Row: {
+          admin_notes: string | null
+          amount_requested: number
+          applicant_type: Database["public"]["Enums"]["applicant_type"]
+          collateral: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          organization_name: string | null
+          phone: string
+          purpose: string
+          reference_number: string
+          repayment_source: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["application_status"]
+          timeline: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount_requested: number
+          applicant_type: Database["public"]["Enums"]["applicant_type"]
+          collateral?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          organization_name?: string | null
+          phone: string
+          purpose: string
+          reference_number: string
+          repayment_source: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["application_status"]
+          timeline: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          amount_requested?: number
+          applicant_type?: Database["public"]["Enums"]["applicant_type"]
+          collateral?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          organization_name?: string | null
+          phone?: string
+          purpose?: string
+          reference_number?: string
+          repayment_source?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["application_status"]
+          timeline?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          organization_name: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          organization_name?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          organization_name?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_reference_number: { Args: never; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      applicant_type: "individual" | "business" | "government"
+      application_status:
+        | "pending"
+        | "under_review"
+        | "approved"
+        | "rejected"
+        | "disbursed"
+        | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +284,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      applicant_type: ["individual", "business", "government"],
+      application_status: [
+        "pending",
+        "under_review",
+        "approved",
+        "rejected",
+        "disbursed",
+        "completed",
+      ],
+    },
   },
 } as const
